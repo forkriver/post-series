@@ -1,33 +1,33 @@
-div.pj-series-bar {
+div.post-series-bar {
 	background: #9ab;
 	padding: 1em;
 	margin-bottom: 1em;
 	border: 1px solid #789;
 }
 
-div.pj-series-bar h2 {
+div.post-series-bar h2 {
 	font-size: 1.25rem;
 	font-weight: normal;
 	font-style: normal;
 }
 
-div.pj-series-bar h2 span.series-name {
+div.post-series-bar h2 span.series-name {
 	font-weight: bold;
 }
 
-div.pj-series-bar a {
+div.post-series-bar a {
 	color: #123;
 }
 
-div.pj-series-bar a:visited {
+div.post-series-bar a:visited {
 	color: #234;
 }
 
-div.pj-series-bar a:hover {
+div.post-series-bar a:hover {
 	color: #600;
 }
 
-div.pj-series-bar span.pj-series-bar-current {
+div.post-series-bar span.post-series-bar-current {
 	font-style: italic;
 	color: #012;
 }

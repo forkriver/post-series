@@ -16,6 +16,8 @@ class Post_Series {
 
 	const TAXONOMY_NAME = 'pj_series';
 
+	const TITLE_MAX_LENGTH = 50;
+
 	/**
 	 * Class constructor.
 	 *
@@ -38,20 +40,20 @@ class Post_Series {
 	function register_taxonomy() {
 
 		$labels = array(
-			'name'                  => _x( 'Series', 'Taxonomy Series', 'pj-series' ),
-			'singular_name'         => _x( 'Series', 'Taxonomy Series', 'pj-series' ),
-			'search_items'          => __( 'Search Series', 'pj-series' ),
-			'popular_items'         => __( 'Popular Series', 'pj-series' ),
-			'all_items'             => __( 'All Series', 'pj-series' ),
-			'parent_item'           => __( 'Parent Series', 'pj-series' ),
-			'parent_item_colon'     => __( 'Parent Series', 'pj-series' ),
-			'edit_item'             => __( 'Edit Series', 'pj-series' ),
-			'update_item'           => __( 'Update Series', 'pj-series' ),
-			'add_new_item'          => __( 'Add New Series', 'pj-series' ),
-			'new_item_name'         => __( 'New Series Name', 'pj-series' ),
-			'add_or_remove_items'   => __( 'Add or remove Series', 'pj-series' ),
-			'choose_from_most_used' => __( 'Choose from most used Series', 'pj-series' ),
-			'menu_name'             => __( 'Series', 'pj-series' ),
+			'name'                  => _x( 'Series', 'Taxonomy Series', 'post-series' ),
+			'singular_name'         => _x( 'Series', 'Taxonomy Series', 'post-series' ),
+			'search_items'          => __( 'Search Series', 'post-series' ),
+			'popular_items'         => __( 'Popular Series', 'post-series' ),
+			'all_items'             => __( 'All Series', 'post-series' ),
+			'parent_item'           => __( 'Parent Series', 'post-series' ),
+			'parent_item_colon'     => __( 'Parent Series', 'post-series' ),
+			'edit_item'             => __( 'Edit Series', 'post-series' ),
+			'update_item'           => __( 'Update Series', 'post-series' ),
+			'add_new_item'          => __( 'Add New Series', 'post-series' ),
+			'new_item_name'         => __( 'New Series Name', 'post-series' ),
+			'add_or_remove_items'   => __( 'Add or remove Series', 'post-series' ),
+			'choose_from_most_used' => __( 'Choose from most used Series', 'post-series' ),
+			'menu_name'             => __( 'Series', 'post-series' ),
 		);
 
 		$args = array(
@@ -63,14 +65,16 @@ class Post_Series {
 			'show_tagcloud'     => true,
 			'show_ui'           => true,
 			'query_var'         => true,
-			'rewrite'           => true,
+			'rewrite'           => array( 'slug' => 'series' ),
 			'query_var'         => true,
 			'capabilities'      => array(),
 		);
 
+		$post_types = get_option( self::PREFIX . 'post_types', array( 'post' ) );
+
 		register_taxonomy(
 			apply_filters( 'pj_series_taxonomy_slug', self::TAXONOMY_NAME ),
-			apply_filters( 'pj_series_taxonomy_post_types', array( 'post' ) ),
+			apply_filters( 'pj_series_taxonomy_post_types', $post_types ),
 			$args
 		);
 	}
@@ -90,6 +94,7 @@ class Post_Series {
 				$args = array(
 					'posts_per_page' => 100,
 					'post_type'      => $post->post_type,
+					'post_status'    => array( 'publish' ),
 					'orderby'        => 'post_date',
 					'order'          => 'ASC',
 					'tax_query'      => array(
@@ -101,16 +106,24 @@ class Post_Series {
 					),
 				);
 				$posts_in_series = get_posts( $args );
+
+				// Get the future posts (if any) in the series.
+				$args['post_status'] = array( 'future' );
+				$args['posts_per_page'] = 1;
+				$future_posts = get_posts( $args );
 				// Don't bother if there's only one in the series.
 				if ( count( $posts_in_series ) > 1 ) {
-					$content .= "<div class='pj-series-bar' id='pj-series-{$series->slug}'>" . PHP_EOL;
-					$content .= "<h2>This post is one of a series: <span class='series-name'>{$series->name}</span>.</h2>" . PHP_EOL;
+					$content .= "<div class='post-series-bar' id='post-series-{$series->slug}'>" . PHP_EOL;
+					$content .= '<h2>';
+					$content .= __( 'Series: ', 'post-series' );
+					$content .= "<span class='series-name'>{$series->name}</span>";
+					$content .= '</h2>' . PHP_EOL;
 					$content .= 'The entire series: ';
 					foreach ( $posts_in_series as $p ) {
 						if ( $p->ID != $post->ID ) {
 							$content .= '<a href="' . get_permalink( $p->ID ) . '">' . apply_filters( 'pj_series_bar_title', $p->post_title ) . '</a>';
 						} else {
-							$content .= '<span class="pj-series-bar-current">' . apply_filters( 'pj_series_bar_title', $p->post_title ) . '</span>';
+							$content .= '<span class="post-series-bar-current">' . apply_filters( 'pj_series_bar_title', $p->post_title ) . '</span>';
 						}
 						if ( end( $posts_in_series ) === $p ) {
 							$content .= '.';
@@ -118,7 +131,10 @@ class Post_Series {
 							$content .= '; ';
 						}
 					}
-					$content .= "</div> <!-- .pj-series-bar #pj-series-{$series->slug} -->" . PHP_EOL;
+					if ( ! empty( $future_posts ) ) {
+						$content .= ' Up next: <span class="post-series-bar-up-next">' . apply_filters( 'pj_series_bar_title', $future_posts[0]->post_title ) . '</span>.';
+					}
+					$content .= "</div> <!-- .post-series-bar #post-series-{$series->slug} -->" . PHP_EOL;
 				}
 			}
 		}
@@ -135,6 +151,9 @@ class Post_Series {
 	function series_bar_title( $title ) {
 		// Remove closing punctuation from the title.
 		$title = preg_replace( '/[\.,?!:;…]+$/', '', $title );
+		if ( strlen( $title ) > self::TITLE_MAX_LENGTH ) {
+			$title = substr( $title, 0, self::TITLE_MAX_LENGTH ) . '[&hellip;]';
+		}
 		return $title;
 	}
 
@@ -145,8 +164,8 @@ class Post_Series {
 	 * @since 1.0.0
 	 */
 	function load_styles() {
-		$handle = 'pj-series';
-		$src = plugins_url( 'css/pj-series.css', __FILE__ );
+		$handle = 'post-series';
+		$src = plugins_url( 'css/post-series.css', __FILE__ );
 		wp_enqueue_style( $handle, $src );
 	}
 
